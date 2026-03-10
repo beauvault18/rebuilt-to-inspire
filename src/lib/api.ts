@@ -24,11 +24,17 @@ export async function getJournalReflection(
   prompt: string,
   entryText: string,
   tags: string[],
+  todayINeed?: string | null,
 ): Promise<string> {
+  const body: Record<string, unknown> = { prompt, entry_text: entryText, tags };
+  if (todayINeed) {
+    body.today_i_need = todayINeed;
+  }
+
   const res = await fetch(`${API_BASE}/journal/reflect`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, entry_text: entryText, tags }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {

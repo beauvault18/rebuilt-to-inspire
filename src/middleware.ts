@@ -8,6 +8,7 @@ const PROTECTED_ROUTES = [
   "/plan",
   "/nutrition",
   "/mental-health",
+  "/chat",
 ];
 
 export async function middleware(request: NextRequest) {
@@ -35,6 +36,7 @@ export const config = {
     "/plan/:path*",
     "/nutrition/:path*",
     "/mental-health/:path*",
+    "/chat/:path*",
     "/auth/:path*",
   ],
 };

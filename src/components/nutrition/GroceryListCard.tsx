@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ShoppingCart, Printer, ClipboardCopy, Check } from "lucide-react";
@@ -28,7 +27,6 @@ export default function GroceryListCard({ categories }: Props) {
   const totalItems = categories.reduce((sum, cat) => sum + cat.items.length, 0);
   const checkedCount = checked.size;
 
-  // Count checked items per category
   const checkedPerCategory = (catIndex: number) => {
     const cat = categories[catIndex];
     if (!cat) return 0;
@@ -93,103 +91,104 @@ export default function GroceryListCard({ categories }: Props) {
   const activeCategory = categories[activeTab];
 
   return (
-    <Card className="border-border/50">
-      <CardContent className="p-5 space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <ShoppingCart className="size-5 text-orange-400" />
-            Grocery List
-          </h3>
-          <span className="text-sm text-muted-foreground">
-            {checkedCount}/{totalItems} items
-          </span>
-        </div>
+    <div className="bg-surface-card rounded-lg p-6 space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <ShoppingCart className="size-5 text-muted-foreground" />
+          Grocery List
+        </h3>
+        <span className="text-base text-muted-foreground">
+          {checkedCount}/{totalItems} items
+        </span>
+      </div>
 
-        {/* Copy / Print buttons */}
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCopy}
-            className="gap-1.5 text-xs"
-          >
-            {copied ? (
-              <Check className="size-3.5 text-green-400" />
-            ) : (
-              <ClipboardCopy className="size-3.5" />
-            )}
-            {copied ? "Copied!" : "Copy List"}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handlePrint}
-            className="gap-1.5 text-xs"
-          >
-            <Printer className="size-3.5" />
-            Print
-          </Button>
-        </div>
+      {/* Copy / Print buttons */}
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleCopy}
+          className="gap-1.5 text-sm"
+        >
+          {copied ? (
+            <Check className="size-4" />
+          ) : (
+            <ClipboardCopy className="size-4" />
+          )}
+          {copied ? "Copied!" : "Copy List"}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handlePrint}
+          className="gap-1.5 text-sm"
+        >
+          <Printer className="size-4" />
+          Print
+        </Button>
+      </div>
 
-        {/* Category Tabs */}
-        <div className="flex flex-wrap gap-1.5">
-          {categories.map((cat, i) => {
-            const catChecked = checkedPerCategory(i);
-            const catTotal = cat.items.length;
-            const allDone = catChecked === catTotal && catTotal > 0;
+      {/* Category Tabs */}
+      <div className="flex flex-wrap gap-1.5">
+        {categories.map((cat, i) => {
+          const catChecked = checkedPerCategory(i);
+          const catTotal = cat.items.length;
+          const allDone = catChecked === catTotal && catTotal > 0;
+          return (
+            <button
+              key={cat.category}
+              onClick={() => setActiveTab(i)}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer ${
+                i === activeTab
+                  ? "bg-surface-panel text-foreground"
+                  : allDone
+                    ? "text-muted-foreground/60 line-through"
+                    : "text-muted-foreground hover:text-foreground"
+              }`}
+              style={{
+                transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
+              }}
+            >
+              {cat.category}
+              <span className="ml-1.5 opacity-60">
+                {catChecked}/{catTotal}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Active category items */}
+      {activeCategory && (
+        <div className="space-y-1">
+          {activeCategory.items.map((item) => {
+            const key = `${activeCategory.category}-${item.name}`;
+            const isChecked = checked.has(key);
             return (
-              <button
-                key={cat.category}
-                onClick={() => setActiveTab(i)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                  i === activeTab
-                    ? "bg-orange-500/20 text-orange-400 border border-orange-500/40"
-                    : allDone
-                      ? "bg-muted/50 text-muted-foreground/60 border border-border/30 line-through"
-                      : "bg-muted/30 text-muted-foreground hover:bg-muted/60 border border-transparent"
+              <div
+                key={key}
+                className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors hover:bg-surface-elevated ${
+                  isChecked ? "opacity-50" : ""
                 }`}
+                onClick={() => toggle(key)}
               >
-                {cat.category}
-                <span className="ml-1.5 opacity-60">
-                  {catChecked}/{catTotal}
+                <Checkbox checked={isChecked} onCheckedChange={() => toggle(key)} />
+                <span
+                  className={`text-sm flex-1 ${
+                    isChecked ? "line-through text-muted-foreground" : ""
+                  }`}
+                >
+                  {item.name}
                 </span>
-              </button>
+                <span className="text-sm text-muted-foreground shrink-0">
+                  {item.quantity}
+                </span>
+              </div>
             );
           })}
         </div>
-
-        {/* Active category items */}
-        {activeCategory && (
-          <div className="space-y-1">
-            {activeCategory.items.map((item) => {
-              const key = `${activeCategory.category}-${item.name}`;
-              const isChecked = checked.has(key);
-              return (
-                <div
-                  key={key}
-                  className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors hover:bg-muted/50 ${
-                    isChecked ? "opacity-50" : ""
-                  }`}
-                  onClick={() => toggle(key)}
-                >
-                  <Checkbox checked={isChecked} onCheckedChange={() => toggle(key)} />
-                  <span
-                    className={`text-sm flex-1 ${
-                      isChecked ? "line-through text-muted-foreground" : ""
-                    }`}
-                  >
-                    {item.name}
-                  </span>
-                  <span className="text-xs text-muted-foreground shrink-0">
-                    {item.quantity}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }

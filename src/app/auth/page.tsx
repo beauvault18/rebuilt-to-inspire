@@ -34,7 +34,8 @@ export default function AuthPage() {
         setError(result.error);
         setLoading(false);
       } else {
-        router.push("/dashboard");
+        const onboarded = localStorage.getItem("rti_onboarding_complete");
+        router.push(onboarded ? "/dashboard" : "/onboarding");
       }
     } else {
       if (!firstName.trim() || !lastName.trim()) {
@@ -47,7 +48,7 @@ export default function AuthPage() {
         setError(result.error);
         setLoading(false);
       } else {
-        router.push("/dashboard");
+        router.push("/onboarding");
       }
     }
   };

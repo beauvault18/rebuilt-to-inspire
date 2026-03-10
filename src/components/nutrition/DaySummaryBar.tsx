@@ -18,30 +18,29 @@ export default function DaySummaryBar({ day }: Props) {
   };
 
   const macros = [
-    { label: "Protein", value: totals.protein_g, unit: "g", color: "text-red-400" },
-    { label: "Carbs", value: totals.carbs_g, unit: "g", color: "text-amber-400" },
-    { label: "Fat", value: totals.fat_g, unit: "g", color: "text-blue-400" },
+    { label: "Protein", value: totals.protein_g, unit: "g" },
+    { label: "Carbs", value: totals.carbs_g, unit: "g" },
+    { label: "Fat", value: totals.fat_g, unit: "g" },
   ];
 
-  // Only show fiber if available
   if (totals.fiber_g > 0) {
-    macros.push({ label: "Fiber", value: totals.fiber_g, unit: "g", color: "text-green-400" });
+    macros.push({ label: "Fiber", value: totals.fiber_g, unit: "g" });
   }
 
   return (
-    <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border/50">
+    <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <Flame className="size-4 text-orange-400" />
-        <span className="text-sm font-semibold">{totals.calories}</span>
-        <span className="text-xs text-muted-foreground">cal total</span>
+        <Flame className="size-4 text-muted-foreground" />
+        <span className="text-base font-semibold">{totals.calories}</span>
+        <span className="text-base text-muted-foreground">cal total</span>
       </div>
       <div className="flex items-center gap-4">
         {macros.map((macro) => (
           <div key={macro.label} className="text-center">
-            <p className={`text-sm font-semibold ${macro.color}`}>
+            <p className="text-base font-semibold">
               {macro.value}{macro.unit}
             </p>
-            <p className="text-xs text-muted-foreground">{macro.label}</p>
+            <p className="text-base text-muted-foreground">{macro.label}</p>
           </div>
         ))}
       </div>

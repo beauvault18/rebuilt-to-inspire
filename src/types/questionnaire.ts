@@ -33,6 +33,7 @@ export interface QuestionnaireData {
   lymphedema_status: string;
   lymphedema_limb: string | null;
   has_ostomy: boolean;
+  had_rplnd: boolean;
   on_hormone_therapy: boolean;
   bone_metastases: string;
   bone_metastases_locations: string[];
@@ -43,6 +44,13 @@ export interface QuestionnaireData {
   preferred_activities: string[];
   days_available: number;
   session_duration_preference: number;
+
+  // Goal and track selection (new — maps to backend enums)
+  pre_diagnosis_activity: string;
+  primary_goal: string;
+  secondary_emphasis: string;
+  long_term_ambition: string;
+
   clinician_clearance: boolean;
   clinician_restrictions: string[];
 }
@@ -75,6 +83,7 @@ export const INITIAL_QUESTIONNAIRE: QuestionnaireData = {
   lymphedema_status: "none",
   lymphedema_limb: null,
   has_ostomy: false,
+  had_rplnd: false,
   on_hormone_therapy: false,
   bone_metastases: "no",
   bone_metastases_locations: [],
@@ -85,6 +94,10 @@ export const INITIAL_QUESTIONNAIRE: QuestionnaireData = {
   preferred_activities: [],
   days_available: 3,
   session_duration_preference: 30,
+  pre_diagnosis_activity: "moderately_active",
+  primary_goal: "general_fitness",
+  secondary_emphasis: "none",
+  long_term_ambition: "maintenance",
   clinician_clearance: false,
   clinician_restrictions: [],
 };
@@ -121,5 +134,6 @@ export function toApiPayload(data: QuestionnaireData) {
   // Auto-compute months_since_treatment_completion from remission date
   apiFields.months_since_treatment_completion =
     computeMonthsSinceRemission(data.remissionDate);
-  return apiFields;
+  // Send age to backend (null if not set or under 18)
+  return { ...apiFields, age: data.age >= 18 ? data.age : null };
 }

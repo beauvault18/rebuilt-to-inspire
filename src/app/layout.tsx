@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Rebuilt To Inspire",
   description:
-    "Your personalized wellness companion for cancer recovery — powered by AI",
+    "Structured recovery and evidence-based exercise programming for cancer survivors",
 };
 
 export default function RootLayout({

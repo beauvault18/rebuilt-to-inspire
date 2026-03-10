@@ -7,8 +7,30 @@ export interface PlanResponse {
   plan: ExercisePlan;
   safety_flags: string[];
   referral_triggers: string[];
-  evidence_count: number;
+  knowledge_objects_used: number;
+  curated_object_ids_used: string[];
   fitt_baseline: FITTBaseline;
+  progression_stage: string;
+  progression_context: ProgressionContext;
+  knowledge_version: string;
+  knowledge_last_updated: string;
+  validation_warnings: string[];
+  primary_track: string;
+  secondary_emphasis: string;
+  identity_level: string;
+  adaptation_decision: string;
+  age_adaptive_notes: string[];
+}
+
+export interface ProgressionContext {
+  current_stage: string;
+  name: string;
+  number: number;
+  goal: string;
+  typical_duration_weeks: string;
+  intensity_range: string;
+  focus: string[];
+  advancement_criteria: string[];
 }
 
 export interface ExercisePlan {

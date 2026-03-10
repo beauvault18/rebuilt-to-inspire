@@ -23,6 +23,7 @@ export default function StepMedicalDetails({
   toggleInList,
 }: Props) {
   const hasColorectal = data.cancer_types.includes("colorectal");
+  const hasTesticular = data.cancer_types.includes("testicular");
   const showLymphedemaLimb = data.lymphedema_status !== "none";
   const showBoneLocations = data.bone_metastases === "yes";
 
@@ -78,6 +79,19 @@ export default function StepMedicalDetails({
           />
           <Label htmlFor="ostomy" className="cursor-pointer text-base">
             I have a colostomy or ileostomy
+          </Label>
+        </div>
+      )}
+
+      {hasTesticular && (
+        <div className="flex items-center gap-3">
+          <Checkbox
+            id="rplnd"
+            checked={data.had_rplnd}
+            onCheckedChange={(v) => setField("had_rplnd", !!v)}
+          />
+          <Label htmlFor="rplnd" className="cursor-pointer text-base">
+            I had retroperitoneal lymph node dissection (RPLND)
           </Label>
         </div>
       )}

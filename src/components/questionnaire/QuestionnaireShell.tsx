@@ -6,24 +6,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import FadeTransition from "@/components/shared/FadeTransition";
 import StepNavigation from "@/components/shared/StepNavigation";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
-import StepPersonalInfo from "./StepPersonalInfo";
-import StepCancerHistory from "./StepCancerHistory";
-import StepSymptoms from "./StepSymptoms";
-import StepMedicalDetails from "./StepMedicalDetails";
-import StepExercisePrefs from "./StepExercisePrefs";
+import StepWelcome from "./StepWelcome";
 import StepClearance from "./StepClearance";
+import StepCancerHistory from "./StepCancerHistory";
+import StepSymptomsAndMedical from "./StepSymptomsAndMedical";
 import StepGoals from "./StepGoals";
+import StepExercisePrefs from "./StepExercisePrefs";
+import StepPersonalInfo from "./StepPersonalInfo";
 import { useQuestionnaireForm } from "@/hooks/useQuestionnaireForm";
 import { generatePlan } from "@/lib/api";
 
 const STEP_TITLES = [
-  "Cancer History",
-  "Personal Information",
-  "Your Goals",
-  "Current Symptoms",
-  "Medical Details",
-  "Exercise Preferences",
+  "Before We Begin",
   "Clinician Clearance",
+  "Cancer History",
+  "Your Recovery Status",
+  "Your Goals",
+  "Exercise Preferences",
+  "Personal Information",
 ];
 
 export default function QuestionnaireShell() {
@@ -41,12 +41,22 @@ export default function QuestionnaireShell() {
 
   const canProceed = useCallback(() => {
     switch (step) {
-      case 0: // Cancer History
+      case 0: // Before We Begin
+        return true;
+      case 1: // Clinician Clearance
+        return data.clinician_clearance;
+      case 2: // Cancer History
         return (
           data.cancer_types.length > 0 &&
           /^\d{4}-\d{2}$/.test(data.remissionDate)
         );
-      case 1: // Personal Info
+      case 3: // Recovery Status (Symptoms + Medical)
+        return true;
+      case 4: // Goals
+        return data.primary_goal !== "";
+      case 5: // Exercise Preferences
+        return true;
+      case 6: // Personal Information
         return (
           data.firstName.trim() !== "" &&
           data.lastName.trim() !== "" &&
@@ -55,16 +65,6 @@ export default function QuestionnaireShell() {
           data.heightFeet > 0 &&
           data.currentWeight > 0
         );
-      case 2: // Goals
-        return data.goals.length > 0;
-      case 3: // Symptoms
-        return true;
-      case 4: // Medical Details
-        return true;
-      case 5: // Exercise Preferences
-        return true;
-      case 6: // Clinician Clearance
-        return data.clinician_clearance;
       default:
         return true;
     }
@@ -75,7 +75,7 @@ export default function QuestionnaireShell() {
 
     if (isLast) {
       setIsSubmitting(true);
-      setShow(false); // Show spinner immediately
+      setShow(false);
       setError("");
       try {
         const payload = getApiPayload();
@@ -84,6 +84,7 @@ export default function QuestionnaireShell() {
           top_k: 5,
         });
         sessionStorage.setItem("rti_plan", JSON.stringify(response));
+        sessionStorage.setItem("rti_questionnaire", JSON.stringify({ questionnaire: payload, top_k: 5 }));
         sessionStorage.setItem(
           "rti_profile",
           JSON.stringify({
@@ -91,7 +92,8 @@ export default function QuestionnaireShell() {
             lastName: data.lastName,
           }),
         );
-        router.push("/plan"); // Navigate directly
+        sessionStorage.removeItem("rti_stage_revealed");
+        router.push("/plan");
       } catch (err) {
         setError(
           err instanceof Error
@@ -99,7 +101,7 @@ export default function QuestionnaireShell() {
             : "Failed to generate plan. Is the backend running?",
         );
         setIsSubmitting(false);
-        setShow(true); // Show form again on error
+        setShow(true);
       }
       return;
     }
@@ -117,12 +119,9 @@ export default function QuestionnaireShell() {
       router.push("/plan");
       return;
     }
-    // Determine direction based on whether we went forward or back
-    // We use a simple approach: the step change happens here
     setShow(true);
   }, [isSubmitting, router]);
 
-  // We need to track direction for step transitions
   const [direction, setDirection] = useState<"forward" | "back">("forward");
 
   const handleNextWithDirection = useCallback(async () => {
@@ -155,6 +154,17 @@ export default function QuestionnaireShell() {
   const renderStep = () => {
     switch (step) {
       case 0:
+        return <StepWelcome />;
+      case 1:
+        return (
+          <StepClearance
+            data={data}
+            setField={setField}
+            addToList={addToList}
+            removeFromList={removeFromList}
+          />
+        );
+      case 2:
         return (
           <StepCancerHistory
             data={data}
@@ -162,20 +172,16 @@ export default function QuestionnaireShell() {
             toggleInList={toggleInList}
           />
         );
-      case 1:
-        return <StepPersonalInfo data={data} setField={setField} />;
-      case 2:
-        return <StepGoals data={data} toggleInList={toggleInList} />;
       case 3:
-        return <StepSymptoms data={data} setField={setField} />;
-      case 4:
         return (
-          <StepMedicalDetails
+          <StepSymptomsAndMedical
             data={data}
             setField={setField}
             toggleInList={toggleInList}
           />
         );
+      case 4:
+        return <StepGoals data={data} setField={setField} />;
       case 5:
         return (
           <StepExercisePrefs
@@ -185,14 +191,7 @@ export default function QuestionnaireShell() {
           />
         );
       case 6:
-        return (
-          <StepClearance
-            data={data}
-            setField={setField}
-            addToList={addToList}
-            removeFromList={removeFromList}
-          />
-        );
+        return <StepPersonalInfo data={data} setField={setField} />;
       default:
         return null;
     }
@@ -210,7 +209,7 @@ export default function QuestionnaireShell() {
         </div>
         <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
           <div
-            className="h-full bg-primary transition-all duration-300 rounded-full"
+            className="h-full bg-brand transition-all duration-300 rounded-full"
             style={{ width: `${((step + 1) / totalSteps) * 100}%` }}
           />
         </div>

@@ -12,7 +12,7 @@ interface FadeTransitionProps {
 
 export default function FadeTransition({
   show,
-  duration = 500,
+  duration = 300,
   onExited,
   children,
   className = "",
@@ -38,6 +38,7 @@ export default function FadeTransition({
       className={`transition-all ${className}`}
       style={{
         transitionDuration: `${duration}ms`,
+        transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
         opacity: show ? 1 : 0,
         transform: show ? "translateY(0)" : "translateY(8px)",
       }}

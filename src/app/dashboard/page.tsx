@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -11,20 +10,30 @@ import {
   Brain,
   LogOut,
   ArrowRight,
-  Clock,
-  Flame,
   Moon,
   BookOpen,
   BarChart3,
-  Sunrise,
-  Sun,
-  Sunset,
+  MessageCircle,
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { getWeekNumber } from "@/lib/workout-storage";
+import {
+  shouldShowNutritionReflection,
+  saveNutritionCheckIn,
+  snoozeNutritionReflection,
+  getNutritionCheckIns,
+  markAdaptationPending,
+} from "@/lib/nutrition-checkin-storage";
+import { evaluateNutritionTrend } from "@/lib/nutrition-adaptation";
+import NutritionReflectionBanner from "@/components/nutrition/NutritionReflectionBanner";
+import NutritionReflectionModal from "@/components/nutrition/NutritionReflectionModal";
 import type { PlanResponse, DayPlan } from "@/types/plan";
 import type { NutritionPlanResponse, MealDay } from "@/types/nutrition";
 import type { MoodEntry, JournalEntry } from "@/types/mental-health";
+import type { PlanTracking } from "@/types/workout";
+import type { NutritionCheckIn } from "@/types/nutrition-checkin";
 import { MOOD_LABELS } from "@/types/mental-health";
+import DashboardTour from "@/components/dashboard/DashboardTour";
 
 function getTodayIndex(planLength: number): number {
   return new Date().getDay() % planLength;
@@ -47,11 +56,6 @@ function estimateDuration(day: DayPlan): number {
   return warmup + main + cooldown;
 }
 
-const MEAL_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
-  breakfast: Sunrise,
-  lunch: Sun,
-  dinner: Sunset,
-};
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -62,6 +66,13 @@ export default function DashboardPage() {
     useState<NutritionPlanResponse | null>(null);
   const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
+  const [treatmentPhase, setTreatmentPhase] = useState<string | null>(null);
+  const [weekNumber, setWeekNumber] = useState(1);
+  const [reflectionOpen, setReflectionOpen] = useState(false);
+  const [reflectionDismissed, setReflectionDismissed] = useState(false);
+  const [trainerName, setTrainerName] = useState("Coach");
+  const [userName, setUserName] = useState("");
+  const [showTour, setShowTour] = useState(false);
 
   useEffect(() => {
     try {
@@ -80,13 +91,64 @@ export default function DashboardPage() {
       const je = localStorage.getItem("rti_journal_entries");
       if (je) setJournalEntries(JSON.parse(je));
     } catch {}
+    try {
+      const nq = sessionStorage.getItem("rti_nutrition_questionnaire");
+      if (nq) {
+        const parsed = JSON.parse(nq);
+        if (parsed.treatment_phase) setTreatmentPhase(parsed.treatment_phase);
+      }
+    } catch {}
+    try {
+      const pt = localStorage.getItem("rti_plan_tracking");
+      if (pt) {
+        const parsed = JSON.parse(pt) as PlanTracking;
+        setWeekNumber(getWeekNumber(parsed));
+      }
+    } catch {}
+    try {
+      const up = localStorage.getItem("rti_user_profile");
+      if (up) {
+        const parsed = JSON.parse(up);
+        if (parsed.trainer_name) setTrainerName(parsed.trainer_name);
+        if (parsed.first_name) setUserName(parsed.first_name);
+      }
+    } catch {}
+    // Show tour if arriving from onboarding or ?tour param
+    const tourFlag = localStorage.getItem("rti_show_tour");
+    const urlTour = new URLSearchParams(window.location.search).has("tour");
+    if (tourFlag || urlTour) {
+      setShowTour(true);
+      localStorage.removeItem("rti_show_tour");
+    }
   }, []);
+
+  // Keep userName in sync with auth profile when it loads
+  useEffect(() => {
+    if (profile?.first_name && !userName) {
+      setUserName(profile.first_name);
+    }
+  }, [profile, userName]);
 
   const handleSignOut = async () => {
     await signOut();
     router.replace("/auth");
     router.refresh();
   };
+
+  // Pull name from multiple sources — Supabase profile, localStorage, or auth email
+  const displayName = (() => {
+    if (profile?.first_name) return profile.first_name;
+    if (userName) return userName;
+    // Last resort: try to get from localStorage directly
+    try {
+      const up = localStorage.getItem("rti_user_profile");
+      if (up) {
+        const parsed = JSON.parse(up);
+        if (parsed.first_name) return parsed.first_name;
+      }
+    } catch {}
+    return "friend";
+  })();
 
   const hasFitness = fitnessPlan?.plan?.weekly_plan?.length;
   const hasNutrition = nutritionPlan?.meal_plan?.length;
@@ -102,16 +164,39 @@ export default function DashboardPage() {
     ? nutritionPlan!.meal_plan[getTodayIndex(nutritionPlan!.meal_plan.length)]
     : null;
 
+  const ctx = fitnessPlan?.progression_context;
+
+  // Nutrition reflection advisory — only when nutrition plan exists
+  const showNutritionReflection =
+    hasNutrition && !reflectionDismissed && shouldShowNutritionReflection();
+
+  const handleReflectionSubmit = (entry: NutritionCheckIn) => {
+    saveNutritionCheckIn(entry);
+    // Evaluate trend after save — adaptation is deferred to Plan tab
+    const allCheckIns = getNutritionCheckIns();
+    const trend = evaluateNutritionTrend(allCheckIns);
+    if (trend) {
+      markAdaptationPending(trend);
+    }
+    setReflectionOpen(false);
+    setReflectionDismissed(true);
+  };
+
+  const handleReflectionSnooze = () => {
+    snoozeNutritionReflection();
+    setReflectionDismissed(true);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between px-8 py-6 border-b border-border">
+      <header className="flex items-center justify-between px-8 py-6 border-b border-border bg-black">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
             Rebuilt To Inspire
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Welcome back, {profile?.first_name || "friend"}
+            Welcome back, {displayName} — {trainerName} is ready for you
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={handleSignOut}>
@@ -120,78 +205,184 @@ export default function DashboardPage() {
         </Button>
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-8 py-12 -mt-28">
-        <div className="max-w-7xl w-full space-y-10">
-          <div className="text-center -mt-14">
-            <h2 className="text-4xl font-bold tracking-tight">
-              Start Rebuilding Your Journey Here
+      <main className="flex-1 px-8 pb-12 flex flex-col justify-center">
+        <div className="max-w-[1600px] mx-auto space-y-6 w-full">
+          {/* Recovery Status Anchor — system-level, shows when any plan exists */}
+          {(ctx || treatmentPhase) && (
+            <div className="bg-surface-panel rounded-xl p-8 space-y-5">
+              <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                Recovery Status
+              </p>
+
+              <h2 className="text-xl font-semibold capitalize">
+                {(treatmentPhase || ctx?.name || "").replace(/_/g, " ")}
+              </h2>
+
+              <div className="flex flex-wrap gap-x-10 gap-y-4">
+                {ctx && (
+                  <div>
+                    <p className="text-sm uppercase tracking-wide text-muted-foreground">
+                      Fitness Stage
+                    </p>
+                    <p className="text-base font-medium capitalize">
+                      {fitnessPlan!.progression_stage.replace(/_/g, " ")}
+                    </p>
+                    {ctx.intensity_range && (
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {ctx.intensity_range}
+                      </p>
+                    )}
+                    {ctx.focus && ctx.focus.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {ctx.focus.map((f) => (
+                          <Badge key={f} variant="secondary" className="text-xs">
+                            {f}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {treatmentPhase && (
+                  <div>
+                    <p className="text-sm uppercase tracking-wide text-muted-foreground">
+                      Fueling Phase
+                    </p>
+                    <p className="text-base font-medium capitalize">
+                      {treatmentPhase.replace(/_/g, " ")}
+                    </p>
+                  </div>
+                )}
+
+                {ctx && (
+                  <div>
+                    <p className="text-sm uppercase tracking-wide text-muted-foreground">
+                      Week
+                    </p>
+                    <p className="text-base font-medium">{weekNumber}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Heading */}
+          <div className="text-center" style={{ transform: "translateY(-5rem)" }}>
+            <h2 className="text-5xl font-bold tracking-tight">
+              Your Recovery Dashboard
             </h2>
-            <p className="text-lg text-muted-foreground mt-3">
-              Complete each step to create your personalized homepage.
+            <p className="text-xl text-muted-foreground mt-3">
+              Structured programming, built from your recovery profile.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-14">
+          {/* Advisory Surface — Nutrition Reflection */}
+          {showNutritionReflection && (
+            <NutritionReflectionBanner
+              onCheckIn={() => setReflectionOpen(true)}
+              onSnooze={handleReflectionSnooze}
+            />
+          )}
+
+          {/* All Four Pillars — 2x2 Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-6 mx-auto" style={{ gridAutoRows: "minmax(360px, auto)" }}>
             {/* Fitness */}
-            {todayFitness ? (
-              <FitnessSummaryCard
-                day={todayFitness}
-                onClick={() => router.push("/plan")}
-              />
-            ) : (
-              <StepTile
-                step="Step 1"
-                title="Fitness"
-                description="AI-generated exercise plans tailored to your cancer recovery journey"
-                Icon={Dumbbell}
-                color="text-green-400"
-                stepColor="text-green-500/70"
-                borderColor="hover:border-green-500/50"
-                onClick={() => router.push("/questionnaire")}
-              />
-            )}
+            <div id="tour-fitness" className="h-full">
+              {todayFitness ? (
+                <FitnessSummaryCard
+                  day={todayFitness}
+                  onClick={() => router.push("/plan")}
+                />
+              ) : (
+                <StepTile
+                  step="Step 1"
+                  title="Fitness"
+                  description="Stage-appropriate exercise programming built from your recovery profile"
+                  Icon={Dumbbell}
+                  color="text-brand"
+                  stepColor="text-brand/70"
+                  borderColor="border-brand/20 hover:border-brand/40"
+                  onClick={() => router.push("/questionnaire")}
+                />
+              )}
+            </div>
 
             {/* Nutrition */}
-            {todayNutrition ? (
-              <NutritionSummaryCard
-                day={todayNutrition}
-                onClick={() => router.push("/nutrition/plan")}
-              />
-            ) : (
-              <StepTile
-                step="Step 2"
-                title="Nutrition"
-                description="Personalized meal plans and dietary guidance for cancer survivors"
-                Icon={UtensilsCrossed}
-                color="text-orange-400"
-                stepColor="text-orange-500/70"
-                borderColor="hover:border-orange-500/50"
-                onClick={() => router.push("/nutrition")}
-              />
-            )}
+            <div id="tour-nutrition" className="h-full">
+              {todayNutrition ? (
+                <NutritionSummaryCard
+                  day={todayNutrition}
+                  onClick={() => router.push("/nutrition/plan")}
+                />
+              ) : (
+                <StepTile
+                  step="Step 2"
+                  title="Nutrition"
+                  description="Structured fueling built from your treatment profile and recovery needs"
+                  Icon={UtensilsCrossed}
+                  color="text-brand"
+                  stepColor="text-brand/70"
+                  borderColor="border-brand/20 hover:border-brand/40"
+                  onClick={() => router.push("/nutrition")}
+                />
+              )}
+            </div>
 
-            {/* Mental Health */}
-            {hasMentalHealth ? (
-              <MentalHealthSummaryCard
-                moodEntries={moodEntries}
-                journalEntries={journalEntries}
-                onClick={() => router.push("/mental-health")}
-              />
-            ) : (
+            {/* Recovery & Resilience */}
+            <div id="tour-mental-health" className="h-full">
+              {hasMentalHealth ? (
+                <MentalHealthSummaryCard
+                  moodEntries={moodEntries}
+                  journalEntries={journalEntries}
+                  onClick={() => router.push("/mental-health")}
+                />
+              ) : (
+                <StepTile
+                  step="Step 3"
+                  title="Recovery & Resilience"
+                  description="Recovery check-ins, breathwork, mood tracking, and journaling"
+                  Icon={Brain}
+                  color="text-purple-400"
+                  stepColor="text-purple-500/70"
+                  borderColor="hover:border-purple-500/50"
+                  onClick={() => router.push("/mental-health")}
+                />
+              )}
+            </div>
+
+            {/* Chat */}
+            <div id="tour-chat" className="h-full">
               <StepTile
-                step="Step 3"
-                title="Mental Health"
-                description="Guided journaling, mood tracking, and coping strategies"
-                Icon={Brain}
-                color="text-purple-400"
-                stepColor="text-purple-500/70"
-                borderColor="hover:border-purple-500/50"
-                onClick={() => router.push("/mental-health")}
+                step="Step 4"
+                title={`Chat with ${trainerName}`}
+                description="Ask questions about your plan, nutrition, recovery, or just check in with your coach"
+                Icon={MessageCircle}
+                color="text-sky-400"
+                stepColor="text-sky-500/70"
+                borderColor="hover:border-sky-500/50"
+                onClick={() => router.push("/chat")}
               />
-            )}
+            </div>
           </div>
         </div>
       </main>
+
+      {/* Nutrition Reflection Modal */}
+      <NutritionReflectionModal
+        open={reflectionOpen}
+        onSubmit={handleReflectionSubmit}
+        onClose={() => setReflectionOpen(false)}
+      />
+
+      {/* Guided Tour */}
+      {showTour && (
+        <DashboardTour
+          trainerName={trainerName}
+          firstName={displayName}
+          onComplete={() => setShowTour(false)}
+        />
+      )}
     </div>
   );
 }
@@ -220,21 +411,21 @@ function StepTile({
   onClick: () => void;
 }) {
   return (
-    <Card
-      className={`cursor-pointer transition-all border-2 ${borderColor}`}
+    <div
+      className={`cursor-pointer transition-all duration-200 bg-surface-card border border-surface-border rounded-2xl hover:bg-surface-elevated h-full ${borderColor}`}
       onClick={onClick}
     >
-      <CardContent className="flex flex-col items-center text-center py-16 px-8">
+      <div className="flex flex-col items-center justify-center text-center py-20 px-12 h-full min-h-[360px]">
         <p
-          className={`text-sm font-semibold uppercase tracking-widest mb-5 ${stepColor}`}
+          className={`text-sm font-semibold uppercase tracking-widest mb-4 ${stepColor}`}
         >
           {step}
         </p>
-        <Icon className={`size-20 ${color} mb-8`} />
-        <h2 className="text-3xl font-bold mb-4">{title}</h2>
-        <p className="text-base text-muted-foreground">{description}</p>
-      </CardContent>
-    </Card>
+        <Icon className={`size-14 ${color} mb-6`} />
+        <h2 className="text-3xl font-bold mb-3">{title}</h2>
+        <p className="text-lg text-muted-foreground leading-relaxed">{description}</p>
+      </div>
+    </div>
   );
 }
 
@@ -253,16 +444,16 @@ function FitnessSummaryCard({
   const duration = estimateDuration(day);
 
   return (
-    <Card
-      className="cursor-pointer transition-all border border-green-500/20 hover:border-green-500/40 bg-green-500/[0.03]"
+    <div
+      className="cursor-pointer transition-all duration-200 bg-surface-card border border-surface-border rounded-lg hover:bg-surface-elevated h-full"
       onClick={onClick}
     >
-      <CardContent className="p-0">
+      <div>
         {/* Card header strip */}
-        <div className="flex items-center justify-between px-7 py-4 border-b border-green-500/10">
+        <div className="flex items-center justify-between px-7 py-4 border-b border-surface-border/50">
           <div className="flex items-center gap-2.5">
-            <Dumbbell className="size-5 text-green-400" />
-            <span className="text-sm font-semibold uppercase tracking-wider text-green-400">
+            <Dumbbell className="size-5 text-brand" />
+            <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               Fitness
             </span>
           </div>
@@ -272,7 +463,7 @@ function FitnessSummaryCard({
         <div className="px-7 py-6 space-y-6">
           {rest ? (
             <div className="text-center py-10">
-              <Moon className="size-12 text-green-400/30 mx-auto mb-4" />
+              <Moon className="size-12 text-muted-foreground/30 mx-auto mb-4" />
               <p className="text-xl font-semibold">Rest Day</p>
               <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
                 Recovery is when your body gets stronger.
@@ -315,7 +506,7 @@ function FitnessSummaryCard({
                     key={i}
                     className="flex items-center gap-2.5 text-base text-muted-foreground"
                   >
-                    <span className="size-1.5 rounded-full bg-green-400 shrink-0" />
+                    <span className="size-1.5 rounded-full bg-muted-foreground/50 shrink-0" />
                     <span className="truncate">{ex.name}</span>
                   </div>
                 ))}
@@ -330,13 +521,13 @@ function FitnessSummaryCard({
         </div>
 
         {/* Footer */}
-        <div className="px-7 py-4 border-t border-green-500/10">
-          <span className="text-sm font-medium text-green-400 flex items-center gap-1.5">
+        <div className="px-7 py-4 border-t border-surface-border/50">
+          <span className="text-sm font-medium text-brand flex items-center gap-1.5">
             View Full Plan <ArrowRight className="size-4" />
           </span>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -355,18 +546,21 @@ function NutritionSummaryCard({
   const totalCal =
     day.daily_totals?.calories ??
     day.meals.reduce((s, m) => s + m.calories, 0);
+  const totalProtein =
+    day.daily_totals?.protein_g ??
+    day.meals.reduce((s, m) => s + (m.protein_g || 0), 0);
 
   return (
-    <Card
-      className="cursor-pointer transition-all border border-orange-500/20 hover:border-orange-500/40 bg-orange-500/[0.03]"
+    <div
+      className="cursor-pointer transition-all duration-200 bg-surface-card border border-surface-border rounded-lg hover:bg-surface-elevated h-full"
       onClick={onClick}
     >
-      <CardContent className="p-0">
+      <div>
         {/* Card header strip */}
-        <div className="flex items-center justify-between px-7 py-4 border-b border-orange-500/10">
+        <div className="flex items-center justify-between px-7 py-4 border-b border-surface-border/50">
           <div className="flex items-center gap-2.5">
-            <UtensilsCrossed className="size-5 text-orange-400" />
-            <span className="text-sm font-semibold uppercase tracking-wider text-orange-400">
+            <UtensilsCrossed className="size-5 text-brand" />
+            <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               Nutrition
             </span>
           </div>
@@ -374,67 +568,62 @@ function NutritionSummaryCard({
         </div>
 
         <div className="px-7 py-6 space-y-6">
-          {/* Calorie badge */}
-          <div className="flex items-center gap-2.5">
-            <Flame className="size-5 text-orange-400" />
-            <span className="text-lg font-semibold">
-              {totalCal.toLocaleString()} calories
-            </span>
+          {/* Focus */}
+          <div>
+            <p className="text-base font-semibold mb-1">
+              Today&apos;s Fueling
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {mainMeals.length} meal{mainMeals.length !== 1 ? "s" : ""} planned
+            </p>
           </div>
 
-          {/* Meals list */}
-          <div className="space-y-4">
-            {mainMeals.map((meal, i) => {
-              const MealIcon = MEAL_ICON[meal.type] || Sun;
-              return (
-                <div key={i} className="flex items-start gap-3.5">
-                  <div className="size-9 rounded-lg bg-muted/40 flex items-center justify-center shrink-0 mt-0.5">
-                    <MealIcon className="size-4.5 text-muted-foreground" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-base font-medium leading-tight truncate">
-                      {meal.name}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      <span className="capitalize">{meal.type}</span>
-                      <span className="mx-1.5 text-border">|</span>
-                      {meal.calories} cal
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Macros */}
-          {day.daily_totals && (
-            <div className="flex gap-3">
-              <MacroPill label="Protein" value={`${day.daily_totals.protein_g}g`} />
-              <MacroPill label="Carbs" value={`${day.daily_totals.carbs_g}g`} />
-              <MacroPill label="Fat" value={`${day.daily_totals.fat_g}g`} />
+          {/* Stats row */}
+          <div className="flex gap-4">
+            <div className="flex-1 rounded-lg bg-muted/30 px-4 py-4 text-center">
+              <p className="text-3xl font-bold">{totalCal.toLocaleString()}</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground mt-1">
+                Calories
+              </p>
             </div>
-          )}
+            <div className="flex-1 rounded-lg bg-muted/30 px-4 py-4 text-center">
+              <p className="text-3xl font-bold">{totalProtein}g</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground mt-1">
+                Protein
+              </p>
+            </div>
+          </div>
+
+          {/* Meal list */}
+          <div className="space-y-2">
+            {mainMeals.slice(0, 4).map((meal, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-2.5 text-base text-muted-foreground"
+              >
+                <span className="size-1.5 rounded-full bg-muted-foreground/50 shrink-0" />
+                <span className="truncate">{meal.name}</span>
+              </div>
+            ))}
+            {mainMeals.length > 4 && (
+              <p className="text-sm text-muted-foreground/50 pl-4">
+                +{mainMeals.length - 4} more
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="px-7 py-4 border-t border-orange-500/10">
-          <span className="text-sm font-medium text-orange-400 flex items-center gap-1.5">
-            View Full Plan <ArrowRight className="size-4" />
+        <div className="px-7 py-4 border-t border-surface-border/50">
+          <span className="text-sm font-medium text-brand flex items-center gap-1.5">
+            Open Today&apos;s Fueling <ArrowRight className="size-4" />
           </span>
         </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function MacroPill({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex-1 rounded-lg bg-muted/30 px-3 py-3 text-center">
-      <p className="text-lg font-semibold">{value}</p>
-      <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+      </div>
     </div>
   );
 }
+
 
 /* ------------------------------------------------------------------ */
 /* Mental Health Summary Card                                         */
@@ -456,22 +645,22 @@ function MentalHealthSummaryCard({
     : null;
 
   return (
-    <Card
-      className="cursor-pointer transition-all border border-purple-500/20 hover:border-purple-500/40 bg-purple-500/[0.03]"
+    <div
+      className="cursor-pointer transition-all duration-200 bg-surface-card border border-surface-border rounded-lg hover:bg-surface-elevated h-full"
       onClick={onClick}
     >
-      <CardContent className="p-0">
+      <div>
         {/* Card header strip */}
-        <div className="flex items-center justify-between px-7 py-4 border-b border-purple-500/10">
+        <div className="flex items-center justify-between px-6 py-3 border-b border-surface-border/50">
           <div className="flex items-center gap-2.5">
-            <Brain className="size-5 text-purple-400" />
-            <span className="text-sm font-semibold uppercase tracking-wider text-purple-400">
-              Mental Health
+            <Brain className="size-4 text-purple-400" />
+            <span className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Recovery & Resilience
             </span>
           </div>
         </div>
 
-        <div className="px-7 py-6 space-y-5">
+        <div className="px-6 py-5 space-y-5">
           {/* Mood status */}
           <div className="flex items-center gap-4">
             <div className="size-11 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
@@ -531,12 +720,12 @@ function MentalHealthSummaryCard({
         </div>
 
         {/* Footer */}
-        <div className="px-7 py-4 border-t border-purple-500/10">
+        <div className="px-6 py-3 border-t border-surface-border/50">
           <span className="text-sm font-medium text-purple-400 flex items-center gap-1.5">
             Open <ArrowRight className="size-4" />
           </span>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

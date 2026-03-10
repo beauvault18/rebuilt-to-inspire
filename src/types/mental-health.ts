@@ -1,3 +1,60 @@
+// ── Recovery Check-In ──
+
+export type TodayINeedTag = "calm" | "clarity" | "encouragement" | "structure";
+
+export interface RecoveryCheckIn {
+  id: string;
+  date: string; // ISO date
+  energy: number; // 1-5
+  nervous_system_load: number; // 1-5
+  confidence_in_body: number; // 1-5
+  today_i_need?: TodayINeedTag;
+}
+
+export const ENERGY_LABELS: Record<number, string> = {
+  1: "Exhausted",
+  2: "Low",
+  3: "Moderate",
+  4: "Good",
+  5: "High",
+};
+
+export const NSL_LABELS: Record<number, string> = {
+  1: "Calm",
+  2: "Settled",
+  3: "Moderate",
+  4: "Elevated",
+  5: "Overwhelmed",
+};
+
+export const CONFIDENCE_LABELS: Record<number, string> = {
+  1: "Very Low",
+  2: "Low",
+  3: "Moderate",
+  4: "Good",
+  5: "Strong",
+};
+
+export const TODAY_I_NEED_OPTIONS: { value: TodayINeedTag; label: string; description: string }[] = [
+  { value: "calm", label: "Calm", description: "I need grounding and stillness" },
+  { value: "clarity", label: "Clarity", description: "I need to organize my thoughts" },
+  { value: "encouragement", label: "Encouragement", description: "I need a gentle push forward" },
+  { value: "structure", label: "Structure", description: "I need a clear plan for today" },
+];
+
+// ── Weekly Recovery Summary ──
+
+export interface WeeklyRecoverySummaryData {
+  week_start: string;
+  avg_energy: number;
+  avg_nsl: number;
+  avg_confidence: number;
+  mood_trend: string;
+  pattern_alerts: string[];
+  check_in_count: number;
+  journal_count: number;
+}
+
 // ── Mood Tracking ──
 
 export interface MoodEntry {

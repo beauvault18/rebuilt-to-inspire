@@ -16,6 +16,7 @@ import StepCookingBudget from "./StepCookingBudget";
 import { useNutritionForm } from "@/hooks/useNutritionForm";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { generateNutritionPlan } from "@/lib/api";
+import { markNutritionPlanCreated } from "@/lib/nutrition-checkin-storage";
 import type { PlanResponse } from "@/types/plan";
 import type { WorkoutDaySummary } from "@/types/nutrition";
 
@@ -126,6 +127,7 @@ export default function NutritionShell() {
         sessionStorage.setItem("rti_nutrition_questionnaire", JSON.stringify(payload));
         const response = await generateNutritionPlan(payload);
         sessionStorage.setItem("rti_nutrition_plan", JSON.stringify(response));
+        markNutritionPlanCreated();
         router.push("/nutrition/plan");
       } catch (err) {
         setError(

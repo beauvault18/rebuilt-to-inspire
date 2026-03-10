@@ -1,42 +1,33 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { Clock, Flame, Info, Dumbbell } from "lucide-react";
+import { Clock, Flame, Dumbbell, Info } from "lucide-react";
 import type { Meal } from "@/types/nutrition";
 
 interface Props {
   meal: Meal;
+  compact?: boolean;
 }
 
-const TYPE_COLORS: Record<string, string> = {
-  breakfast: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
-  lunch: "bg-green-500/10 text-green-400 border-green-500/30",
-  dinner: "bg-blue-500/10 text-blue-400 border-blue-500/30",
-  snack: "bg-purple-500/10 text-purple-400 border-purple-500/30",
-};
-
-export default function MealCard({ meal }: Props) {
+export default function MealCard({ meal, compact = false }: Props) {
   return (
-    <div className="p-4 rounded-lg border border-border/50 space-y-3">
+    <div className="p-5 rounded-lg border border-surface-border/20 space-y-3">
       <div className="flex items-center justify-between gap-2">
         <h4 className="font-semibold text-base">{meal.name}</h4>
-        <Badge
-          variant="outline"
-          className={`text-xs capitalize ${TYPE_COLORS[meal.type] || ""}`}
-        >
+        <Badge variant="outline" className="text-base capitalize">
           {meal.type}
         </Badge>
       </div>
 
-      <p className="text-sm text-muted-foreground">{meal.description}</p>
+      <p className="text-base text-muted-foreground">{meal.description}</p>
 
-      <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+      <div className="flex items-center gap-4 text-base text-muted-foreground flex-wrap">
         <span className="flex items-center gap-1">
-          <Clock className="size-3.5" />
+          <Clock className="size-4" />
           {meal.prep_time_min} min
         </span>
         <span className="flex items-center gap-1">
-          <Flame className="size-3.5" />
+          <Flame className="size-4" />
           {meal.calories} cal
         </span>
         {meal.protein_g != null && (
@@ -50,34 +41,40 @@ export default function MealCard({ meal }: Props) {
         )}
       </div>
 
-      {meal.key_nutrients.length > 0 && (
+      {!compact && meal.key_nutrients.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {meal.key_nutrients.map((nutrient) => (
-            <Badge key={nutrient} variant="secondary" className="text-xs">
+            <Badge key={nutrient} variant="secondary" className="text-base">
               {nutrient}
             </Badge>
           ))}
         </div>
       )}
 
-      {meal.cancer_benefit && (
-        <p className="text-xs text-orange-400/80 italic">
+      {!compact && meal.cancer_benefit && (
+        <p className="text-base text-muted-foreground italic">
           {meal.cancer_benefit}
         </p>
       )}
 
       {meal.workout_note && (
-        <div className="flex gap-2 p-2.5 rounded-md bg-emerald-500/5 border border-emerald-500/20">
-          <Dumbbell className="size-3.5 text-emerald-400 mt-0.5 shrink-0" />
-          <p className="text-xs text-emerald-300/80">{meal.workout_note}</p>
-        </div>
+        <p className="text-base text-muted-foreground">
+          <span className="font-medium">
+            <Dumbbell className="size-4 inline mr-1.5 -mt-0.5" />
+            Workout note:
+          </span>{" "}
+          {meal.workout_note}
+        </p>
       )}
 
-      {meal.side_effect_tip && (
-        <div className="flex gap-2 p-2.5 rounded-md bg-cyan-500/5 border border-cyan-500/20">
-          <Info className="size-3.5 text-cyan-400 mt-0.5 shrink-0" />
-          <p className="text-xs text-cyan-300/80">{meal.side_effect_tip}</p>
-        </div>
+      {!compact && meal.side_effect_tip && (
+        <p className="text-base text-muted-foreground">
+          <span className="font-medium">
+            <Info className="size-4 inline mr-1.5 -mt-0.5" />
+            Side effect tip:
+          </span>{" "}
+          {meal.side_effect_tip}
+        </p>
       )}
     </div>
   );

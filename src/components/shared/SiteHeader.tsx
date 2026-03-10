@@ -7,7 +7,7 @@ export default function SiteHeader() {
     <header className="px-8 py-5 border-b border-border">
       <Link
         href="/dashboard"
-        className="text-xl font-bold tracking-tight hover:opacity-80 transition-opacity"
+        className="text-xl font-bold tracking-tight hover:text-brand transition-colors"
       >
         Rebuilt To Inspire
       </Link>

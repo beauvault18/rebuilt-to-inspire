@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider"; // used by Session Duration
 import {
   ACTIVITY_LEVELS,
+  PRE_DIAGNOSIS_ACTIVITIES,
   EQUIPMENT_OPTIONS,
   PREFERRED_ACTIVITIES,
 } from "@/lib/constants";
@@ -26,6 +27,37 @@ export default function StepExercisePrefs({
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold">Exercise Preferences</h2>
+
+      {/* Pre-Diagnosis Activity Level */}
+      <div className="space-y-3">
+        <Label className="text-base">Activity Level Before Diagnosis</Label>
+        <p className="text-sm text-muted-foreground">
+          How active were you before your cancer diagnosis?
+        </p>
+        <RadioGroup
+          value={data.pre_diagnosis_activity}
+          onValueChange={(v) => setField("pre_diagnosis_activity", v)}
+          className="space-y-2"
+        >
+          {PRE_DIAGNOSIS_ACTIVITIES.map((al) => (
+            <div key={al.value} className="flex items-center gap-2">
+              <RadioGroupItem
+                value={al.value}
+                id={`prediag-${al.value}`}
+              />
+              <Label
+                htmlFor={`prediag-${al.value}`}
+                className="cursor-pointer"
+              >
+                {al.label}{" "}
+                <span className="text-xs text-muted-foreground">
+                  — {al.description}
+                </span>
+              </Label>
+            </div>
+          ))}
+        </RadioGroup>
+      </div>
 
       <div className="space-y-3">
         <Label className="text-base">Current Activity Level</Label>

@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { DayPlan } from "@/types/plan";
 
@@ -35,86 +34,62 @@ function getRationale(focus: string): string {
 }
 
 export default function DaySummaryPanel({ day, cancerTypeFocus }: Props) {
-  // Collect unique equipment
   const equipment = new Set<string>();
   day.main?.forEach((ex) => {
     if (ex.equipment && ex.equipment !== "—") equipment.add(ex.equipment);
   });
 
-  // Estimate duration
   const warmupMin = day.warmup?.duration_min || 0;
   const cooldownMin = day.cooldown?.duration_min || 0;
-  const mainMin = (day.main?.length || 0) * 4; // ~4 min per exercise
+  const mainMin = (day.main?.length || 0) * 4;
   const totalMin = warmupMin + mainMin + cooldownMin;
 
   return (
-    <div className="space-y-4">
+    <div className="bg-surface-card rounded-lg p-5 space-y-4">
       {/* Focus */}
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Today&apos;s Focus</CardTitle>
-            <Badge>{day.focus}</Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            {getRationale(day.focus)}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-base font-semibold">Today&apos;s Focus</p>
+          <Badge>{day.focus}</Badge>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {getRationale(day.focus)}
+        </p>
+        {cancerTypeFocus && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Tailored for:{" "}
+            <span className="capitalize font-medium">{cancerTypeFocus}</span>{" "}
+            cancer survivors
           </p>
-          {cancerTypeFocus && (
-            <p className="text-xs text-muted-foreground mt-2">
-              Tailored for:{" "}
-              <span className="capitalize font-medium">
-                {cancerTypeFocus}
-              </span>{" "}
-              cancer survivors
+        )}
+      </div>
+
+      {/* Stats + Equipment row */}
+      <div className="flex items-center gap-6 pt-4 border-t border-surface-border/30">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            Exercises
+          </p>
+          <p className="font-semibold text-lg">{day.main?.length || 0}</p>
+        </div>
+        {totalMin > 0 && (
+          <div>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Duration
             </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Quick stats */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-muted-foreground text-xs uppercase tracking-wide">
-                Exercises
-              </p>
-              <p className="font-semibold text-lg">
-                {day.main?.length || 0}
-              </p>
-            </div>
-            <div>
-              <p className="text-muted-foreground text-xs uppercase tracking-wide">
-                Est. Duration
-              </p>
-              <p className="font-semibold text-lg">
-                {totalMin > 0 ? `~${totalMin} min` : "—"}
-              </p>
-            </div>
+            <p className="font-semibold text-lg">~{totalMin} min</p>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Equipment needed */}
-      {equipment.size > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Equipment Needed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {Array.from(equipment).map((eq) => (
-                <Badge key={eq} variant="outline">
-                  {eq}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
+        )}
+        {equipment.size > 0 && (
+          <div className="ml-auto flex flex-wrap gap-1.5">
+            {Array.from(equipment).map((eq) => (
+              <Badge key={eq} variant="outline" className="text-xs">
+                {eq}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
