@@ -1,5 +1,12 @@
 // Enum values mirroring survivorship_ai/planner/questionnaire.py exactly.
 
+export const CANCER_STAGE_OPTIONS = [
+  { value: "Stage I", label: "Stage I" },
+  { value: "Stage II", label: "Stage II" },
+  { value: "Stage III", label: "Stage III" },
+  { value: "Stage IV", label: "Stage IV" },
+] as const;
+
 export const CANCER_TYPES = [
   { value: "breast", label: "Breast" },
   { value: "colorectal", label: "Colorectal" },
@@ -10,7 +17,6 @@ export const CANCER_TYPES = [
 ] as const;
 
 export const TREATMENT_TYPES = [
-  { value: "surgery", label: "Surgery" },
   { value: "chemotherapy", label: "Chemotherapy" },
   { value: "radiation", label: "Radiation" },
   { value: "immunotherapy", label: "Immunotherapy" },
@@ -21,17 +27,39 @@ export const TREATMENT_TYPES = [
 ] as const;
 
 export const SURGERY_TYPES = [
+  // Breast
   { value: "mastectomy", label: "Mastectomy", cancerType: "breast" },
-  { value: "lumpectomy", label: "Lumpectomy", cancerType: "breast" },
-  { value: "prostatectomy", label: "Prostatectomy", cancerType: "prostate" },
-  { value: "colectomy", label: "Colectomy", cancerType: "colorectal" },
+  { value: "double_mastectomy", label: "Double Mastectomy", cancerType: "breast" },
+  { value: "lumpectomy", label: "Lumpectomy (Breast-Conserving)", cancerType: "breast" },
+  { value: "breast_reconstruction", label: "Breast Reconstruction", cancerType: "breast" },
+  { value: "sentinel_node_biopsy_breast", label: "Sentinel Lymph Node Biopsy", cancerType: "breast" },
+  { value: "axillary_dissection", label: "Axillary Lymph Node Dissection", cancerType: "breast" },
+  // Colorectal
+  { value: "colectomy", label: "Colectomy (Partial or Total)", cancerType: "colorectal" },
+  { value: "low_anterior_resection", label: "Low Anterior Resection (LAR)", cancerType: "colorectal" },
+  { value: "abdominoperineal_resection", label: "Abdominoperineal Resection (APR)", cancerType: "colorectal" },
+  { value: "colostomy", label: "Colostomy / Ileostomy", cancerType: "colorectal" },
+  { value: "polypectomy", label: "Polypectomy", cancerType: "colorectal" },
+  // Prostate
+  { value: "prostatectomy", label: "Radical Prostatectomy", cancerType: "prostate" },
+  { value: "robotic_prostatectomy", label: "Robotic-Assisted Prostatectomy", cancerType: "prostate" },
+  { value: "turp", label: "TURP (Transurethral Resection)", cancerType: "prostate" },
+  { value: "pelvic_lymph_dissection", label: "Pelvic Lymph Node Dissection", cancerType: "prostate" },
+  // Lung
   { value: "lobectomy", label: "Lobectomy", cancerType: "lung" },
   { value: "pneumonectomy", label: "Pneumonectomy", cancerType: "lung" },
   { value: "wedge_resection", label: "Wedge Resection", cancerType: "lung" },
-  { value: "thyroidectomy", label: "Thyroidectomy", cancerType: "thyroid" },
+  { value: "sleeve_resection", label: "Sleeve Resection", cancerType: "lung" },
+  { value: "vats", label: "VATS (Video-Assisted Thoracic Surgery)", cancerType: "lung" },
+  // Thyroid
+  { value: "total_thyroidectomy", label: "Total Thyroidectomy", cancerType: "thyroid" },
+  { value: "partial_thyroidectomy", label: "Partial Thyroidectomy (Lobectomy)", cancerType: "thyroid" },
+  { value: "thyroid_lymph_dissection", label: "Central Neck Dissection", cancerType: "thyroid" },
+  // Testicular
   { value: "orchiectomy", label: "Orchiectomy", cancerType: "testicular" },
-  { value: "rplnd", label: "RPLND (Lymph Node Dissection)", cancerType: "testicular" },
-  { value: "lymph_node_dissection", label: "Lymph Node Dissection", cancerType: null },
+  { value: "rplnd", label: "RPLND (Retroperitoneal Lymph Node Dissection)", cancerType: "testicular" },
+  // General (shown for all cancer types)
+  { value: "port_placement", label: "Port / Mediport Placement", cancerType: null },
   { value: "other", label: "Other", cancerType: null },
   { value: "none", label: "None / Not Applicable", cancerType: null },
 ] as const;
@@ -145,4 +173,28 @@ export const LONG_TERM_AMBITIONS = [
   { value: "progressive_fitness", label: "Progressive Fitness", description: "Steadily improve over time" },
   { value: "sport_return", label: "Sport Return", description: "Return to a specific sport or activity" },
   { value: "peak_performance", label: "Peak Performance", description: "Reach highest possible fitness level" },
+] as const;
+
+export const SLEEP_OPTIONS = [
+  { value: "less_than_6", label: "Less than 6 hours" },
+  { value: "6_to_7", label: "6–7 hours" },
+  { value: "7_to_8", label: "7–8 hours" },
+  { value: "8_to_9", label: "8–9 hours" },
+  { value: "9_plus", label: "9+ hours" },
+] as const;
+
+export const DAYS_OPTIONS = [
+  { value: "2", label: "1–2 days" },
+  { value: "3", label: "3 days" },
+  { value: "4", label: "4 days" },
+  { value: "5", label: "5 days" },
+  { value: "6", label: "6+ days" },
+] as const;
+
+export const DURATION_OPTIONS = [
+  { value: "20", label: "15–20 minutes" },
+  { value: "30", label: "20–30 minutes" },
+  { value: "40", label: "30–45 minutes" },
+  { value: "50", label: "45–60 minutes" },
+  { value: "75", label: "60–90 minutes" },
 ] as const;

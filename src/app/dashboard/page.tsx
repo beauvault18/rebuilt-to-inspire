@@ -190,12 +190,12 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between px-8 py-6 border-b border-border bg-black">
+      <header className="flex items-center justify-between px-4 sm:px-8 py-4 sm:py-6 border-b border-border bg-black">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight">
             Rebuilt To Inspire
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Welcome back, {displayName} — {trainerName} is ready for you
           </p>
         </div>
@@ -205,74 +205,14 @@ export default function DashboardPage() {
         </Button>
       </header>
 
-      <main className="flex-1 px-8 pb-12 flex flex-col justify-center">
-        <div className="max-w-[1600px] mx-auto space-y-6 w-full">
-          {/* Recovery Status Anchor — system-level, shows when any plan exists */}
-          {(ctx || treatmentPhase) && (
-            <div className="bg-surface-panel rounded-xl p-8 space-y-5">
-              <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Recovery Status
-              </p>
-
-              <h2 className="text-xl font-semibold capitalize">
-                {(treatmentPhase || ctx?.name || "").replace(/_/g, " ")}
-              </h2>
-
-              <div className="flex flex-wrap gap-x-10 gap-y-4">
-                {ctx && (
-                  <div>
-                    <p className="text-sm uppercase tracking-wide text-muted-foreground">
-                      Fitness Stage
-                    </p>
-                    <p className="text-base font-medium capitalize">
-                      {fitnessPlan!.progression_stage.replace(/_/g, " ")}
-                    </p>
-                    {ctx.intensity_range && (
-                      <p className="text-sm text-muted-foreground mt-0.5">
-                        {ctx.intensity_range}
-                      </p>
-                    )}
-                    {ctx.focus && ctx.focus.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1.5">
-                        {ctx.focus.map((f) => (
-                          <Badge key={f} variant="secondary" className="text-xs">
-                            {f}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {treatmentPhase && (
-                  <div>
-                    <p className="text-sm uppercase tracking-wide text-muted-foreground">
-                      Fueling Phase
-                    </p>
-                    <p className="text-base font-medium capitalize">
-                      {treatmentPhase.replace(/_/g, " ")}
-                    </p>
-                  </div>
-                )}
-
-                {ctx && (
-                  <div>
-                    <p className="text-sm uppercase tracking-wide text-muted-foreground">
-                      Week
-                    </p>
-                    <p className="text-base font-medium">{weekNumber}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
+      <main className="flex-1 px-4 sm:px-8 py-8 sm:py-12">
+        <div className="max-w-[1200px] mx-auto space-y-6 w-full">
           {/* Heading */}
-          <div className="text-center" style={{ transform: "translateY(-5rem)" }}>
-            <h2 className="text-5xl font-bold tracking-tight">
+          <div className="text-center py-4">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
               Your Recovery Dashboard
             </h2>
-            <p className="text-xl text-muted-foreground mt-3">
+            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground mt-3">
               Structured programming, built from your recovery profile.
             </p>
           </div>
@@ -286,7 +226,7 @@ export default function DashboardPage() {
           )}
 
           {/* All Four Pillars — 2x2 Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-6 mx-auto" style={{ gridAutoRows: "minmax(360px, auto)" }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             {/* Fitness */}
             <div id="tour-fitness" className="h-full">
               {todayFitness ? (
@@ -415,15 +355,15 @@ function StepTile({
       className={`cursor-pointer transition-all duration-200 bg-surface-card border border-surface-border rounded-2xl hover:bg-surface-elevated h-full ${borderColor}`}
       onClick={onClick}
     >
-      <div className="flex flex-col items-center justify-center text-center py-20 px-12 h-full min-h-[360px]">
+      <div className="flex flex-col items-center justify-center text-center py-12 sm:py-16 lg:py-20 px-6 sm:px-10 lg:px-12 h-full min-h-[260px] sm:min-h-[300px] lg:min-h-[340px]">
         <p
-          className={`text-sm font-semibold uppercase tracking-widest mb-4 ${stepColor}`}
+          className={`text-xs sm:text-sm font-semibold uppercase tracking-widest mb-3 sm:mb-4 ${stepColor}`}
         >
           {step}
         </p>
-        <Icon className={`size-14 ${color} mb-6`} />
-        <h2 className="text-3xl font-bold mb-3">{title}</h2>
-        <p className="text-lg text-muted-foreground leading-relaxed">{description}</p>
+        <Icon className={`size-10 sm:size-12 lg:size-14 ${color} mb-4 sm:mb-6`} />
+        <h2 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-3">{title}</h2>
+        <p className="text-sm sm:text-base lg:text-lg text-muted-foreground leading-relaxed">{description}</p>
       </div>
     </div>
   );

@@ -55,20 +55,21 @@ export function shouldShowNutritionReflection(): boolean {
     }
   } catch {}
 
-  const days = daysSinceLastNutritionCheckIn();
-  if (days === null) {
-    // Never checked in — only show if plan has existed for 7+ days
-    try {
-      const created = localStorage.getItem(PLAN_CREATED_KEY);
-      if (!created) return false;
-      const createdDate = new Date(created);
-      const diffMs = new Date().getTime() - createdDate.getTime();
-      return Math.floor(diffMs / (1000 * 60 * 60 * 24)) >= 7;
-    } catch {
-      return false;
-    }
+  const last = getLastNutritionCheckIn();
+  if (last) {
+    // Already checked in today — don't show again
+    const today = new Date().toISOString().split("T")[0];
+    if (last.date === today) return false;
+    return true;
   }
-  return days >= 7;
+
+  // Never checked in — show if a nutrition plan exists
+  try {
+    const created = localStorage.getItem(PLAN_CREATED_KEY);
+    return !!created;
+  } catch {
+    return false;
+  }
 }
 
 export function markNutritionPlanCreated(): void {
@@ -78,8 +79,10 @@ export function markNutritionPlanCreated(): void {
 }
 
 export function snoozeNutritionReflection(): void {
+  // Snooze until tomorrow
   const snoozeUntil = new Date();
-  snoozeUntil.setDate(snoozeUntil.getDate() + 3);
+  snoozeUntil.setDate(snoozeUntil.getDate() + 1);
+  snoozeUntil.setHours(0, 0, 0, 0);
   localStorage.setItem(SNOOZE_KEY, snoozeUntil.toISOString());
 }
 

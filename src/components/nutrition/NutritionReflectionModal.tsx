@@ -82,9 +82,9 @@ export default function NutritionReflectionModal({
         }}
       >
         <div>
-          <h2 className="text-xl font-semibold">Weekly Fueling Reflection</h2>
+          <h2 className="text-xl font-semibold">Daily Fueling Check-In</h2>
           <p className="text-base text-muted-foreground mt-1">
-            How has your body been responding this week?
+            How is your body feeling today? This helps us fine-tune your plan.
           </p>
         </div>
 

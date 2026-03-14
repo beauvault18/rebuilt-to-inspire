@@ -12,33 +12,23 @@ interface StepNavigationProps {
 }
 
 export default function StepNavigation({
-  onBack,
   onNext,
   canProceed,
-  isFirst,
   isLast,
   isSubmitting = false,
 }: StepNavigationProps) {
   return (
-    <div className="flex justify-between pt-8">
-      <Button
-        variant="outline"
-        onClick={onBack}
-        disabled={isFirst || isSubmitting}
-        className={`h-11 px-6 text-base ${isFirst ? "invisible" : ""}`}
-      >
-        Back
-      </Button>
+    <div className="pt-6">
       <Button
         onClick={onNext}
         disabled={!canProceed || isSubmitting}
-        className="h-11 px-6 text-base font-semibold"
+        className="w-full h-12 text-base font-semibold rounded-xl"
       >
         {isSubmitting
           ? "Generating..."
           : isLast
-            ? "Generate My Plan"
-            : "Next"}
+            ? "Design My Program"
+            : "Continue"}
       </Button>
     </div>
   );

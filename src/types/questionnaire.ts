@@ -21,7 +21,9 @@ export interface QuestionnaireData {
 
   // Fields mapping 1:1 to Pydantic Questionnaire model
   cancer_types: string[];
+  cancer_stages: Record<string, string>; // e.g. { breast: "Stage II", lung: "Stage IV" }
   treatments_received: string[];
+  treatment_dates: Record<string, string>; // e.g. { chemotherapy: "2025-06", radiation: "2025-09" }
   surgery_type: string;
   months_since_treatment_completion: number;
   fatigue: string;
@@ -43,6 +45,7 @@ export interface QuestionnaireData {
   equipment_access: string[];
   preferred_activities: string[];
   days_available: number;
+  preferred_days: string[]; // e.g. ["monday","wednesday","friday"] or ["flexible"]
   session_duration_preference: number;
 
   // Goal and track selection (new — maps to backend enums)
@@ -53,6 +56,9 @@ export interface QuestionnaireData {
 
   clinician_clearance: boolean;
   clinician_restrictions: string[];
+
+  // Sleep (recovery factor)
+  sleep_hours: string;
 }
 
 export const INITIAL_QUESTIONNAIRE: QuestionnaireData = {
@@ -71,7 +77,9 @@ export const INITIAL_QUESTIONNAIRE: QuestionnaireData = {
   goalWeight: 0,
   goals: [],
   cancer_types: [],
+  cancer_stages: {},
   treatments_received: [],
+  treatment_dates: {},
   surgery_type: "none",
   months_since_treatment_completion: 0,
   fatigue: "none",
@@ -93,6 +101,7 @@ export const INITIAL_QUESTIONNAIRE: QuestionnaireData = {
   equipment_access: ["none"],
   preferred_activities: [],
   days_available: 3,
+  preferred_days: [],
   session_duration_preference: 30,
   pre_diagnosis_activity: "moderately_active",
   primary_goal: "general_fitness",
@@ -100,6 +109,7 @@ export const INITIAL_QUESTIONNAIRE: QuestionnaireData = {
   long_term_ambition: "maintenance",
   clinician_clearance: false,
   clinician_restrictions: [],
+  sleep_hours: "7_to_8",
 };
 
 /** Compute months between remission date and now. */

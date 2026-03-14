@@ -21,7 +21,7 @@ export default function LoadingSpinner() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[400px] gap-6">
+    <div className="fixed inset-0 flex flex-col items-center justify-center gap-6">
       <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin" />
       <p className="text-lg text-muted-foreground animate-pulse">
         {messages[messageIndex]}

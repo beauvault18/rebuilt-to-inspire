@@ -13,9 +13,9 @@ export default function NutritionReflectionBanner({
 }: Props) {
   return (
     <div className="bg-surface-card rounded-lg p-6 space-y-4">
-      <p className="text-base font-medium">Fueling Reflection</p>
+      <p className="text-base font-medium">Daily Fueling Check-In</p>
       <p className="text-base text-muted-foreground">
-        Over the past week, how has your fueling been supporting your recovery?
+        A quick check-in helps us tailor your plan — how are you feeling today?
       </p>
       <div className="flex flex-wrap gap-3">
         <Button

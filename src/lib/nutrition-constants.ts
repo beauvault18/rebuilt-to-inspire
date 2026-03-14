@@ -148,9 +148,9 @@ export const COOKING_SKILLS = [
 ] as const;
 
 export const BUDGET_PREFERENCES = [
-  { value: "budget", label: "Budget-Friendly", description: "Keep costs low" },
-  { value: "moderate", label: "Moderate", description: "Balance of cost and quality" },
-  { value: "flexible", label: "Flexible", description: "Quality is the priority" },
+  { value: "budget", label: "Budget-Friendly — $60–90/week · $250–370/mo", description: "Keep costs low" },
+  { value: "moderate", label: "Moderate — $90–130/week · $390–465/mo", description: "Balance of cost and quality" },
+  { value: "flexible", label: "Flexible — $130+/week · $500+/mo", description: "Quality is the priority" },
 ] as const;
 
 export const MEAL_PREP_TIMES = [
